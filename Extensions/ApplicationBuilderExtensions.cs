@@ -26,11 +26,7 @@ namespace SearchApp.Extensions
             app.UseRouting();
             app.UseSession();
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
-
+            app.MapControllers();
             app.MapRazorPages();
         }
     }

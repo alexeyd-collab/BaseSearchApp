@@ -1,4 +1,4 @@
-﻿using SearchApp.Models;
+using SearchApp.Models;
 using SearchApp.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +16,21 @@ namespace SearchApp.Controllers
         }
 
         [HttpPost]
-        public async Task<List<RepoSearchItem>> RepoSearch([FromBody] string keyword)
+        public async Task<IActionResult> RepoSearch([FromBody] string keyword)
         {
-            return await _repoSearcService.Search(keyword);
+            try
+            {
+                var results = await _repoSearcService.Search(keyword);
+                return Ok(results);
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(502, new { error = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { error = "An unexpected error occurred while processing your search. Please try again." });
+            }
         }
     }
 }

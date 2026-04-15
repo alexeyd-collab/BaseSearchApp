@@ -5,23 +5,33 @@ function App() {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!keyword) return;
+    
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/RepoSearch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(keyword),
       });
+      
       if (response.ok) {
         const data = await response.json();
         setResults(data);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.error || 'Something went wrong connecting to the server.');
+        setResults([]);
       }
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('A network error occurred. Please check your connection and try again.');
+      setResults([]);
     } finally {
         setLoading(false);
     }
@@ -57,6 +67,12 @@ function App() {
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
+
+      {error && (
+        <div className="error-message" style={{ color: 'red', textAlign: 'center', marginTop: '1rem', padding: '1rem', background: '#ffecec', borderRadius: '4px' }}>
+          {error}
+        </div>
+      )}
 
       <main className="results-container">
         {results.length > 0 ? (

@@ -39,25 +39,38 @@ namespace SearchApp.Services
             var cachedResults = await storage.GetAsync(keyword);
             if (cachedResults != null)
             {
-                _logger.LogInformation(SearchApp.Constants.AppConstants.LogMessages.CacheHit, keyword);
+                _logger.LogInformation($"Cache hit for keyword: {keyword}");
                 return cachedResults;
             }
 
-            _logger.LogInformation(SearchApp.Constants.AppConstants.LogMessages.CacheMiss, keyword);
+            _logger.LogInformation($"Cache miss for keyword: {keyword}. Fetching from GitHub API.");
             
-            var searchResults = await _httpClient.GetAsync(_settings.BaseUrl + keyword);
-            
-            if (searchResults.IsSuccessStatusCode)
+            try
             {
-                var response = await searchResults.Content.ReadFromJsonAsync<GitHubSearchResponse>();
-                var items = response?.Items ?? new List<RepoSearchItem>();
+                var searchResults = await _httpClient.GetAsync(_settings.BaseUrl + keyword);
                 
-                await storage.SetAsync(keyword, items);
-                return items;
+                if (searchResults.IsSuccessStatusCode)
+                {
+                    var response = await searchResults.Content.ReadFromJsonAsync<GitHubSearchResponse>();
+                    var items = response?.Items ?? new List<RepoSearchItem>();
+                    
+                    await storage.SetAsync(keyword, items);
+                    return items;
+                }
+                
+                _logger.LogWarning($"GitHub API request failed with status code: {searchResults.StatusCode}");
+                throw new ApplicationException($"We couldn't retrieve results from GitHub at this time (Status: {searchResults.StatusCode}). Please try again later.");
             }
-            
-            _logger.LogWarning(SearchApp.Constants.AppConstants.LogMessages.ApiRequestFailed, searchResults.StatusCode);
-            return new List<RepoSearchItem>();
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error contacting GitHub API.");
+                throw new ApplicationException("We had a problem contacting GitHub. Please check your connection and try again.", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "Timeout contacting GitHub API.");
+                throw new ApplicationException("The search request to GitHub timed out. Please try again later.", ex);
+            }
         }
     }
 }

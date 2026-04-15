@@ -1,0 +1,38 @@
+[Unit]
+Description=SearchApp — GitHub Repository Search
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=searchapp
+Group=searchapp
+WorkingDirectory=/var/www/searchapp
+
+ExecStart=/usr/bin/dotnet /var/www/searchapp/SearchApp.dll
+
+# Environment
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://localhost:5000
+Environment=DOTNET_NOLOGO=1
+
+# Uncomment and set to override Redis connection from appsettings.Production.json:
+# Environment=StorageSettings__RedisConnectionString=localhost:6379
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+# Logging — forwarded to journald (use: journalctl -u searchapp -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=searchapp
+
+[Install]
+WantedBy=multi-user.target

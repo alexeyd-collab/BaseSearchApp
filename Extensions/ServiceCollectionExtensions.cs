@@ -61,10 +61,30 @@ namespace SearchApp.Extensions
             });
         }
 
-        public static void AddAppStorage(this IServiceCollection services)
+        public static void AddAppStorage(this IServiceCollection services, IConfiguration configuration)
         {
+            var storageSettings = configuration
+                .GetSection(AppConstants.Configuration.StorageSettingsSection)
+                .Get<StorageSettings>() ?? new StorageSettings();
+
             services.AddMemoryCache();
-            services.AddDistributedMemoryCache();
+
+            if (storageSettings.Provider == StorageType.DistributedCache)
+            {
+                if (string.IsNullOrWhiteSpace(storageSettings.RedisConnectionString))
+                    throw new InvalidOperationException(
+                        "StorageSettings:RedisConnectionString must be set when Provider is DistributedCache.");
+
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = storageSettings.RedisConnectionString;
+                    options.InstanceName = "SearchApp:";
+                });
+            }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
 
             services.AddSingleton<MemorySearchResultStorage>();
             services.AddSingleton<DistributedCacheSearchResultStorage>();

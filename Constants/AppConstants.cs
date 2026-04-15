@@ -34,12 +34,5 @@ namespace SearchApp.Constants
             public const string Accept = "Accept";
             public const string UserAgent = "User-Agent";
         }
-
-        public static class LogMessages
-        {
-            public const string CacheHit = "Cache hit for keyword: {Keyword}";
-            public const string CacheMiss = "Cache miss for keyword: {Keyword}. Fetching from GitHub API.";
-            public const string ApiRequestFailed = "GitHub API request failed with status code: {StatusCode}";
-        }
     }
 }
